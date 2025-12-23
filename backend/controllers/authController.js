@@ -1,47 +1,52 @@
-const User = require("../models/userModel");
-const bcrypt = require("bcryptjs");
-const generateVerificationCode = require("../utils/generateVerificationCode");
+import bcrypt from "bcryptjs";
+// const User = require("../models/userModel");
+// const bcrypt = require("bcryptjs");
+// const generateVerificationCode = require("../utils/generateVerificationCode");
+import {User} from "../models/userModel.js";
+import { generateVerificationToken } from "../utils/generateVerificationToken.js";
+import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
 
-const signup = async (req, res) => {
+export const signup = async (req, res) => {
   const { email, password, name } = req.body;
   try {
-    if (!req.body || !email || !password || !name) {
+    if (!email || !password || !name) {
       throw new Error("All fields are required");
     }
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      throw new Error("User already exists");
+    const userAlreadyExists = await User.findOne({ email });
+    if (userAlreadyExists) {
+      throw new Error("User Already Exists");
     }
-    
-    const hashedPassword =  await bcrypt.hash(password, 10)
-    const verificationToken = generateVerificationCode()
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const verificationToken = generateVerificationToken();
+
     const user = new User({
-       email,
-       password: hashedPassword,
-       name,
-       verificationToken,
-       verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000
+      name,
+      email,
+      password: hashedPassword,
+      verificationToken,
+      verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 + 1000,
+    });
+    await user.save();
 
-     });
+    generateTokenAndSetCookie(res, user._id);
 
-     await user.save()
-
-
+    res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      user: {
+        ...user._doc,
+        password: null,
+      },
+    });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
 
-const login = async (req, res) => {
+export const login = async (req, res) => {
   res.send("login func");
 };
 
-const logout = async (req, res) => {
+export const logout = async (req, res) => {
   res.send("logout");
-};
-
-module.exports = {
-  signup,
-  login,
-  logout,
 };

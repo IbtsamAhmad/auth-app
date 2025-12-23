@@ -1,15 +1,19 @@
-const express = require("express");
-const dotenv =  require("dotenv").config();
-const connectDB = require("./db/connectDB");
-const authRoutes = require("./routes/authRoute")
+import express from "express"
+import {connectDB} from "./db/connectDB.js"
+import authRoutes from "./routes/authRoute.js"
+import dotenv from "dotenv"
+dotenv.config()
 
-const app = express();
-
-app.use("/api/auth", authRoutes );
+const app = express()
 
 app.use(express.json())
 
-app.listen(8000, () => {
-  console.log("app running");
-//   connectDB()
-});
+
+app.use('/api/auth', authRoutes)
+
+app.listen(3000,() =>{
+console.log("app running")
+ connectDB()
+})
+
+
